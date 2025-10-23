@@ -389,11 +389,9 @@ clinical-analytics-platform/
 ## 📞 Contact
 
 **Shibam Samaddar**  
-Senior Java Developer | Healthcare Technology Specialist  
-📧 Email: [your-email@example.com]  
+Senior Java Developer
+📧 Email: shibamsamaddar1999@gmail.com
 💼 LinkedIn: [linkedin.com/in/shibam-samaddar]  
 🐙 GitHub: [github.com/shibam-max]
 
 ---
-
-*This project showcases production-ready enterprise Java development with healthcare domain expertise, specifically designed to demonstrate technical skills required for Oracle Health positions.*
