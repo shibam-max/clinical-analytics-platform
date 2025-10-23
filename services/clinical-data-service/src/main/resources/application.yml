@@ -1,0 +1,243 @@
+# Clinical Analytics Platform Configuration
+# Production-ready configuration demonstrating Oracle Health technical requirements
+
+spring:
+  application:
+    name: clinical-analytics-platform
+  
+  # Database Configuration - PostgreSQL with Vector Extension
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:clinical_analytics}?currentSchema=public
+    username: ${DB_USERNAME:clinical_user}
+    password: ${DB_PASSWORD:clinical_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  # JPA Configuration with Performance Optimization
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: false
+        jdbc:
+          batch_size: 25
+          order_inserts: true
+          order_updates: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+
+  # Vector Database Configuration (Spring AI + pgvector)
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:your-openai-api-key}
+      embedding:
+        model: text-embedding-ada-002
+        options:
+          dimensions: 1536
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        schema-name: clinical_vectors
+        table-name: clinical_embeddings
+
+  # Big Data - Kafka Configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      buffer-memory: 33554432
+      enable-idempotence: true
+    consumer:
+      group-id: clinical-analytics-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 500
+
+  # Redis Configuration for High-Performance Caching
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+
+  # Security Configuration - OAuth2 Resource Server
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080/realms/clinical-platform}
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8080/realms/clinical-platform/protocol/openid-connect/certs}
+
+# AWS Configuration for Cloud-Native Architecture
+aws:
+  region: ${AWS_REGION:us-east-1}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:clinical-analytics-data}
+    encryption: AES256
+  cloudwatch:
+    namespace: ClinicalAnalyticsPlatform
+    enabled: true
+  rds:
+    endpoint: ${AWS_RDS_ENDPOINT:clinical-db.cluster-xyz.us-east-1.rds.amazonaws.com}
+
+# Clinical Platform Specific Configuration
+clinical:
+  analytics:
+    # Vector Search Configuration
+    vector-search:
+      similarity-threshold: 0.8
+      max-results: 50
+      cache-ttl: 300 # seconds
+    
+    # ML Model Configuration
+    ml-models:
+      risk-assessment:
+        model-path: /models/risk-assessment-v2.pkl
+        confidence-threshold: 0.75
+      
+    # Big Data Processing
+    batch-processing:
+      chunk-size: 1000
+      parallel-threads: 8
+      max-memory-per-task: 2GB
+    
+    # HIPAA Compliance
+    audit:
+      enabled: true
+      retention-days: 2555 # 7 years
+      log-level: DETAILED
+    
+    # Performance Optimization
+    performance:
+      enable-query-cache: true
+      cache-size: 10000
+      async-pool-size: 20
+
+# Monitoring and Observability Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,openapi,swagger-ui
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 10s
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
+  tracing:
+    sampling:
+      probability: 1.0
+
+# OpenTelemetry Configuration
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+  resource:
+    attributes:
+      service.name: clinical-analytics-platform
+      service.version: 1.0.0
+      deployment.environment: ${ENVIRONMENT:development}
+
+# Logging Configuration with Performance Optimization
+logging:
+  level:
+    com.oraclehealth: DEBUG
+    org.springframework.security: INFO
+    org.springframework.ai: DEBUG
+    org.apache.kafka: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+  file:
+    name: logs/clinical-analytics.log
+    max-size: 100MB
+    max-history: 30
+
+# Server Configuration with Performance Tuning
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api/v1
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+    max-connections: 8192
+    accept-count: 100
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# JVM Performance Tuning Properties
+jvm:
+  optimization:
+    gc-algorithm: G1GC
+    heap-size:
+      initial: 2g
+      maximum: 8g
+    gc-tuning:
+      max-pause-time: 200ms
+      parallel-threads: 8
+    string-deduplication: true
+    compressed-oops: true
+
+# API Documentation Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  info:
+    title: Clinical Analytics Platform API
+    description: Enterprise Clinical Data Analytics with Vector DB and Big Data Processing
+    version: 1.0.0
+    contact:
+      name: Shibam Samaddar
+      email: shibam@oraclehealth.com
+    license:
+      name: MIT License
+      url: https://opensource.org/licenses/MIT
