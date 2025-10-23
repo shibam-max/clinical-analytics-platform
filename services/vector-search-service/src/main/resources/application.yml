@@ -1,0 +1,22 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: vector-search-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clinical_analytics
+    username: clinical_user
+    password: clinical_pass
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

@@ -1,6 +1,8 @@
 package com.oraclehealth.clinical.service;
 
 import com.oraclehealth.clinical.domain.ClinicalRecord;
+import com.oraclehealth.clinical.repository.ClinicalDataRepository;
+import com.oraclehealth.clinical.service.ClinicalAnalyticsServiceDTOs.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -302,6 +304,41 @@ public class ClinicalAnalyticsService {
         if (riskScore >= 0.6) return RiskLevel.MODERATE;
         if (riskScore >= 0.3) return RiskLevel.LOW;
         return RiskLevel.MINIMAL;
+    }
+
+    // Helper methods for clinical analytics
+    private ClinicalFeatures extractClinicalFeatures(ClinicalRecord record, List<String> patientHistory) {
+        return ClinicalFeatures.builder().build();
+    }
+
+    private List<String> identifyRiskFactors(ClinicalFeatures features) {
+        return List.of("Hypertension", "Diabetes");
+    }
+
+    private List<String> identifyRiskFactors(ClinicalContext context) {
+        return List.of("Age", "Comorbidities");
+    }
+
+    private List<String> generateRecommendations(double riskScore, ClinicalFeatures features) {
+        return List.of("Regular monitoring", "Lifestyle changes");
+    }
+
+    private Object analyzeRecordGroup(List<ClinicalRecord> records) {
+        return "Analysis of " + records.size() + " records";
+    }
+
+    private List<String> extractRecommendations(List<Document> guidelines) {
+        return guidelines.stream()
+                .map(Document::getContent)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> checkContraindications(ClinicalContext context) {
+        return List.of("Drug allergies", "Pregnancy");
+    }
+
+    private double calculateConfidenceScore(List<Document> guidelines, List<SimilarCaseResult> cases) {
+        return 0.85;
     }
 
     // Additional helper classes and enums

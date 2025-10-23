@@ -1,7 +1,8 @@
 package com.oraclehealth.clinical.controller;
 
 import com.oraclehealth.clinical.service.ClinicalAnalyticsService;
-import com.oraclehealth.clinical.service.ClinicalAnalyticsService.*;
+import com.oraclehealth.clinical.service.ClinicalAnalyticsServiceDTOs.*;
+import com.oraclehealth.clinical.controller.ControllerDTOs.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -250,9 +251,5 @@ public class ClinicalAnalyticsController {
         return HealthStatus.HEALTHY;
     }
 
-    // Supporting classes and enums
-    
-    public enum HealthStatus {
-        HEALTHY, DEGRADED, UNHEALTHY
-    }
+
 }
