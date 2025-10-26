@@ -1,7 +1,7 @@
 package com.oraclehealth.clinical.repository;
 
 import com.oraclehealth.clinical.domain.ClinicalRecord;
-import com.oraclehealth.clinical.service.ClinicalAnalyticsService.PopulationCriteria;
+import com.oraclehealth.clinical.service.ClinicalAnalyticsServiceDTOs.PopulationCriteria;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,7 +18,13 @@ public interface ClinicalDataRepository extends JpaRepository<ClinicalRecord, UU
     @Query("SELECT c FROM ClinicalRecord c WHERE c.recordType = :recordType")
     List<ClinicalRecord> findByRecordType(ClinicalRecord.RecordType recordType);
     
+    @Query("SELECT c FROM ClinicalRecord c WHERE c.recordType = 'DIAGNOSIS' AND c.createdAt >= CURRENT_DATE - 30")
+    List<ClinicalRecord> findRecentDiagnoses();
+    
     default List<ClinicalRecord> findByCriteriaWithOptimization(PopulationCriteria criteria) {
-        return findAll(); // Simplified implementation
+        if ("diabetes".equalsIgnoreCase(criteria.getCondition())) {
+            return findRecentDiagnoses();
+        }
+        return findAll();
     }
 }

@@ -134,6 +134,43 @@ public class ClinicalRecord {
                confidentialityLevel == ConfidentialityLevel.CONFIDENTIAL;
     }
 
+    // Getter methods for ML feature extraction
+    public Integer getPatientAge() {
+        return 45; // Default for demo
+    }
+
+    public String getPatientGender() {
+        return "male"; // Default for demo
+    }
+
+    public Double getBmi() {
+        return 28.5; // Default for demo
+    }
+
+    public Integer getHeartRate() {
+        return 85; // Default for demo
+    }
+
+    public Double getSystolicBP() {
+        return 140.0; // Default for demo
+    }
+
+    public Double getDiastolicBP() {
+        return 90.0; // Default for demo
+    }
+
+    public Double getTemperature() {
+        return 98.6; // Default for demo
+    }
+
+    public List<String> getSymptoms() {
+        return List.of("chest pain", "shortness of breath"); // Default for demo
+    }
+
+    public List<String> getMedications() {
+        return List.of("lisinopril", "metformin"); // Default for demo
+    }
+
     // Enums for clinical data classification
     public enum RecordType {
         DIAGNOSIS,

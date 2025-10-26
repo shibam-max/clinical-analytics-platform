@@ -71,13 +71,29 @@ public class ClinicalAnalyticsServiceDTOs {
     public static class PopulationHealthInsights {
         private int insightCount;
         private String summary;
+        private java.util.Map<String, Object> insights;
+        
+        public PopulationHealthInsights() {
+            this.insights = new java.util.HashMap<>();
+            this.insightCount = 0;
+        }
         
         public void addInsight(ClinicalRecord.RecordType recordType, Object analysis) {
             this.insightCount++;
+            if (insights == null) insights = new java.util.HashMap<>();
+            insights.put(recordType.toString(), analysis);
         }
         
         public void merge(PopulationHealthInsights other) {
             this.insightCount += other.insightCount;
+            if (other.insights != null) {
+                if (insights == null) insights = new java.util.HashMap<>();
+                insights.putAll(other.insights);
+            }
+        }
+        
+        public String getSummary() {
+            return "Analyzed " + insightCount + " insights";
         }
     }
 
@@ -101,6 +117,18 @@ public class ClinicalAnalyticsServiceDTOs {
         private String condition;
         private String timeRange;
         private String aggregation;
+        private int ageMin;
+        private int ageMax;
+        
+        public static PopulationCriteria defaultCriteria() {
+            return PopulationCriteria.builder()
+                    .condition("general")
+                    .timeRange("30d")
+                    .aggregation("daily")
+                    .ageMin(0)
+                    .ageMax(120)
+                    .build();
+        }
     }
 
     @Data
@@ -129,8 +157,15 @@ public class ClinicalAnalyticsServiceDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ClinicalFeatures {
+        private int age;
+        private String condition;
+        private List<String> riskFactors;
+        
         public double calculateBaseRisk() {
-            return 0.5; // Default implementation
+            double risk = 0.3;
+            if (age > 65) risk += 0.2;
+            if (riskFactors != null && riskFactors.size() > 2) risk += 0.3;
+            return Math.min(risk, 1.0);
         }
     }
 

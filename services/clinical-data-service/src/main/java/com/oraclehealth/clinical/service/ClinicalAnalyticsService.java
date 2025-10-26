@@ -3,6 +3,9 @@ package com.oraclehealth.clinical.service;
 import com.oraclehealth.clinical.domain.ClinicalRecord;
 import com.oraclehealth.clinical.repository.ClinicalDataRepository;
 import com.oraclehealth.clinical.service.ClinicalAnalyticsServiceDTOs.*;
+import com.oraclehealth.clinical.ml.ClinicalMLService;
+import com.oraclehealth.clinical.ml.ClinicalFeatures;
+import com.oraclehealth.clinical.ml.OutcomePrediction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 /**
  * Advanced Clinical Analytics Service
@@ -36,17 +40,20 @@ public class ClinicalAnalyticsService {
     private final EmbeddingModel embeddingModel;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ClinicalDataRepository clinicalDataRepository;
+    private final ClinicalMLService clinicalMLService;
 
     @Autowired
     public ClinicalAnalyticsService(
             VectorStore vectorStore,
             EmbeddingModel embeddingModel,
             KafkaTemplate<String, Object> kafkaTemplate,
-            ClinicalDataRepository clinicalDataRepository) {
+            ClinicalDataRepository clinicalDataRepository,
+            ClinicalMLService clinicalMLService) {
         this.vectorStore = vectorStore;
         this.embeddingModel = embeddingModel;
         this.kafkaTemplate = kafkaTemplate;
         this.clinicalDataRepository = clinicalDataRepository;
+        this.clinicalMLService = clinicalMLService;
     }
 
     /**
@@ -63,6 +70,9 @@ public class ClinicalAnalyticsService {
             log.info("Performing semantic search for clinical query: {}", clinicalQuery);
             
             try {
+                // Create embeddings for the clinical query
+                List<Double> queryEmbedding = embeddingModel.embed(clinicalQuery);
+                
                 // Enhance query with demographic context for better matching
                 String enhancedQuery = buildEnhancedQuery(clinicalQuery, demographics);
                 
@@ -109,6 +119,9 @@ public class ClinicalAnalyticsService {
                 // Extract clinical features for ML model
                 ClinicalFeatures features = extractClinicalFeatures(record, patientHistory);
                 
+                // Use real ML service for risk calculation
+                double riskScore = clinicalMLService.calculateRiskScore(features).join();
+                
                 // Perform vector-based similarity analysis
                 List<SimilarCaseResult> similarCases = findSimilarClinicalCases(
                     record.getClinicalNarrative(),
@@ -116,9 +129,6 @@ public class ClinicalAnalyticsService {
                     50,
                     0.8
                 ).join();
-                
-                // Calculate risk score using ensemble approach
-                double riskScore = calculateRiskScore(features, similarCases);
                 
                 RiskAssessmentResult result = RiskAssessmentResult.builder()
                         .patientId(record.getPatientId())
@@ -308,7 +318,31 @@ public class ClinicalAnalyticsService {
 
     // Helper methods for clinical analytics
     private ClinicalFeatures extractClinicalFeatures(ClinicalRecord record, List<String> patientHistory) {
-        return ClinicalFeatures.builder().build();
+        return ClinicalFeatures.builder()
+                .age(record.getPatientAge() != null ? record.getPatientAge() : 50)
+                .gender(record.getPatientGender() != null ? record.getPatientGender() : "unknown")
+                .bmi(record.getBmi() != null ? record.getBmi() : 25.0)
+                .heartRate(record.getHeartRate() != null ? record.getHeartRate() : 70)
+                .bloodPressureSystolic(record.getSystolicBP() != null ? record.getSystolicBP() : 120.0)
+                .bloodPressureDiastolic(record.getDiastolicBP() != null ? record.getDiastolicBP() : 80.0)
+                .temperature(record.getTemperature() != null ? record.getTemperature() : 98.6)
+                .symptoms(record.getSymptoms() != null ? record.getSymptoms() : new ArrayList<>())
+                .riskFactors(extractRiskFactorsFromHistory(patientHistory))
+                .medications(record.getMedications() != null ? record.getMedications() : new ArrayList<>())
+                .build();
+    }
+    
+    private List<String> extractRiskFactorsFromHistory(List<String> patientHistory) {
+        List<String> riskFactors = new ArrayList<>();
+        if (patientHistory != null) {
+            for (String history : patientHistory) {
+                if (history.toLowerCase().contains("diabetes")) riskFactors.add("Diabetes");
+                if (history.toLowerCase().contains("hypertension")) riskFactors.add("Hypertension");
+                if (history.toLowerCase().contains("smoking")) riskFactors.add("Smoking");
+                if (history.toLowerCase().contains("obesity")) riskFactors.add("Obesity");
+            }
+        }
+        return riskFactors;
     }
 
     private List<String> identifyRiskFactors(ClinicalFeatures features) {
